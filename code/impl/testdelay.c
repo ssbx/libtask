@@ -10,7 +10,7 @@ enum {
 };
 
 #define MAX_ARGS 100
-int args_values[100];
+int args_values[MAX_ARGS];
 
 Channel *c;
 

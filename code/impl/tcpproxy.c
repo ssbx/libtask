@@ -10,6 +10,9 @@ enum {
     STACK = 32768
 };
 
+#define MAX_CLIENT_FD 100
+int client_fd[MAX_CLIENT_FD]; // Basic, after MAX_CLIENT_FD request, the program will stop
+
 char *server;
 int port;
 void proxytask(void*);
@@ -31,7 +34,7 @@ mkfd2(int fd1, int fd2) {
 
 void
 taskmain(int argc, char **argv) {
-    int cfd, fd;
+    int cfd, fd, i;
     int rport;
     char remote[16];
 
@@ -47,9 +50,16 @@ taskmain(int argc, char **argv) {
         taskexitall(1);
     }
     fdnoblock(fd);
+    i = 0;
     while ((cfd = netaccept(fd, remote, &rport)) >= 0) {
+        client_fd[i] = cfd;
         fprintf(stderr, "connection from %s:%d\n", remote, rport);
-        taskcreate(proxytask, (void*) cfd, STACK);
+        taskcreate(proxytask, (void*) &client_fd[i], STACK);
+
+        i++;
+        if (i == MAX_CLIENT_FD) {
+            break;
+        }
     }
 }
 
@@ -57,7 +67,7 @@ void
 proxytask(void *v) {
     int fd, remotefd;
 
-    fd = (int) v;
+    fd = *(int*) v;
     if ((remotefd = netdial(TCP, server, port)) < 0) {
         close(fd);
         return;
