@@ -10,170 +10,164 @@ extern "C" {
 #include <stdarg.h>
 #include <inttypes.h>
 
-/*
- * basic procs and threads
- */
 
-typedef struct Task Task;
-typedef struct Tasklist Tasklist;
+    /*
+     * basic procs and threads
+     */
 
-int		anyready(void);
-int		taskcreate(void (*f)(void *arg), void *arg, unsigned int stacksize);
-void		taskexit(int);
-void		taskexitall(int);
-void		taskmain(int argc, char *argv[]);
-int		taskyield(void);
-void**		taskdata(void);
-void		needstack(int);
-void		taskname(char*, ...);
-void		taskstate(char*, ...);
-char*		taskgetname(void);
-char*		taskgetstate(void);
-void		tasksystem(void);
-unsigned int	taskdelay(unsigned int);
-unsigned int	taskid(void);
+    typedef struct Task Task;
+    typedef struct Tasklist Tasklist;
 
-struct Tasklist	/* used internally */
-{
-	Task	*head;
-	Task	*tail;
-};
+    int anyready(void);
+    int taskcreate(void (*f)(void *arg), void *arg, unsigned int stacksize);
+    void taskexit(int);
+    void taskexitall(int);
+    void taskmain(int argc, char *argv[]);
+    int taskyield(void);
+    void** taskdata(void);
+    void needstack(int);
+    void taskname(char*, ...);
+    void taskstate(char*, ...);
+    char* taskgetname(void);
+    char* taskgetstate(void);
+    void tasksystem(void);
+    unsigned int taskdelay(unsigned int);
+    unsigned int taskid(void);
 
-/*
- * queuing locks
- */
-typedef struct QLock QLock;
-struct QLock
-{
-	Task	*owner;
-	Tasklist waiting;
-};
+    struct Tasklist /* used internally */ {
+        Task *head;
+        Task *tail;
+    };
 
-void	qlock(QLock*);
-int	canqlock(QLock*);
-void	qunlock(QLock*);
+    /*
+     * queuing locks
+     */
+    typedef struct QLock QLock;
 
-/*
- * reader-writer locks
- */
-typedef struct RWLock RWLock;
-struct RWLock
-{
-	int	readers;
-	Task	*writer;
-	Tasklist rwaiting;
-	Tasklist wwaiting;
-};
+    struct QLock {
+        Task *owner;
+        Tasklist waiting;
+    };
 
-void	rlock(RWLock*);
-int	canrlock(RWLock*);
-void	runlock(RWLock*);
+    void qlock(QLock*);
+    int canqlock(QLock*);
+    void qunlock(QLock*);
 
-void	wlock(RWLock*);
-int	canwlock(RWLock*);
-void	wunlock(RWLock*);
+    /*
+     * reader-writer locks
+     */
+    typedef struct RWLock RWLock;
 
-/*
- * sleep and wakeup (condition variables)
- */
-typedef struct Rendez Rendez;
+    struct RWLock {
+        int readers;
+        Task *writer;
+        Tasklist rwaiting;
+        Tasklist wwaiting;
+    };
 
-struct Rendez
-{
-	QLock	*l;
-	Tasklist waiting;
-};
+    void rlock(RWLock*);
+    int canrlock(RWLock*);
+    void runlock(RWLock*);
 
-void	tasksleep(Rendez*);
-int	taskwakeup(Rendez*);
-int	taskwakeupall(Rendez*);
+    void wlock(RWLock*);
+    int canwlock(RWLock*);
+    void wunlock(RWLock*);
 
-/*
- * channel communication
- */
-typedef struct Alt Alt;
-typedef struct Altarray Altarray;
-typedef struct Channel Channel;
+    /*
+     * sleep and wakeup (condition variables)
+     */
+    typedef struct Rendez Rendez;
 
-enum
-{
-	CHANEND,
-	CHANSND,
-	CHANRCV,
-	CHANNOP,
-	CHANNOBLK,
-};
+    struct Rendez {
+        QLock *l;
+        Tasklist waiting;
+    };
 
-struct Alt
-{
-	Channel		*c;
-	void		*v;
-	unsigned int	op;
-	Task		*task;
-	Alt		*xalt;
-};
+    void tasksleep(Rendez*);
+    int taskwakeup(Rendez*);
+    int taskwakeupall(Rendez*);
 
-struct Altarray
-{
-	Alt		**a;
-	unsigned int	n;
-	unsigned int	m;
-};
+    /*
+     * channel communication
+     */
+    typedef struct Alt Alt;
+    typedef struct Altarray Altarray;
+    typedef struct Channel Channel;
 
-struct Channel
-{
-	unsigned int	bufsize;
-	unsigned int	elemsize;
-	unsigned char	*buf;
-	unsigned int	nbuf;
-	unsigned int	off;
-	Altarray	asend;
-	Altarray	arecv;
-	char		*name;
-};
+    enum {
+        CHANEND,
+        CHANSND,
+        CHANRCV,
+        CHANNOP,
+        CHANNOBLK,
+    };
 
-int		chanalt(Alt *alts);
-Channel*	chancreate(int elemsize, int elemcnt);
-void		chanfree(Channel *c);
-int		chaninit(Channel *c, int elemsize, int elemcnt);
-int		channbrecv(Channel *c, void *v);
-void*		channbrecvp(Channel *c);
-unsigned long	channbrecvul(Channel *c);
-int		channbsend(Channel *c, void *v);
-int		channbsendp(Channel *c, void *v);
-int		channbsendul(Channel *c, unsigned long v);
-int		chanrecv(Channel *c, void *v);
-void*		chanrecvp(Channel *c);
-unsigned long	chanrecvul(Channel *c);
-int		chansend(Channel *c, void *v);
-int		chansendp(Channel *c, void *v);
-int		chansendul(Channel *c, unsigned long v);
+    struct Alt {
+        Channel *c;
+        void *v;
+        unsigned int op;
+        Task *task;
+        Alt *xalt;
+    };
 
-/*
- * Threaded I/O.
- */
-int		fdread(int, void*, int);
-int		fdread1(int, void*, int);	/* always uses fdwait */
-int		fdwrite(int, void*, int);
-void		fdwait(int, int);
-int		fdnoblock(int);
+    struct Altarray {
+        Alt **a;
+        unsigned int n;
+        unsigned int m;
+    };
 
-void		fdtask(void*);
+    struct Channel {
+        unsigned int bufsize;
+        unsigned int elemsize;
+        unsigned char *buf;
+        unsigned int nbuf;
+        unsigned int off;
+        Altarray asend;
+        Altarray arecv;
+        char *name;
+    };
 
-/*
- * Network dialing - sets non-blocking automatically
- */
-enum
-{
-	UDP = 0,
-	TCP = 1,
-};
+    int chanalt(Alt *alts);
+    Channel* chancreate(int elemsize, int elemcnt);
+    void chanfree(Channel *c);
+    int chaninit(Channel *c, int elemsize, int elemcnt);
+    int channbrecv(Channel *c, void *v);
+    void* channbrecvp(Channel *c);
+    unsigned long channbrecvul(Channel *c);
+    int channbsend(Channel *c, void *v);
+    int channbsendp(Channel *c, void *v);
+    int channbsendul(Channel *c, unsigned long v);
+    int chanrecv(Channel *c, void *v);
+    void* chanrecvp(Channel *c);
+    unsigned long chanrecvul(Channel *c);
+    int chansend(Channel *c, void *v);
+    int chansendp(Channel *c, void *v);
+    int chansendul(Channel *c, unsigned long v);
 
-int		netannounce(int, char*, int);
-int		netaccept(int, char*, int*);
-int		netdial(int, char*, int);
-int		netlookup(char*, uint32_t*);	/* blocks entire program! */
-int		netdial(int, char*, int);
+    /*
+     * Threaded I/O.
+     */
+    int fdread(int, void*, int);
+    int fdread1(int, void*, int); /* always uses fdwait */
+    int fdwrite(int, void*, int);
+    void fdwait(int, int);
+    int fdnoblock(int);
+
+    void fdtask(void*);
+
+    /*
+     * Network dialing - sets non-blocking automatically
+     */
+    enum {
+        UDP = 0,
+        TCP = 1,
+    };
+
+    int netannounce(int, char*, int);
+    int netaccept(int, char*, int*);
+    int netdial(int, char*, int);
+    int netlookup(char*, uint32_t*); /* blocks entire program! */
+    int netdial(int, char*, int);
 
 #ifdef __cplusplus
 }
