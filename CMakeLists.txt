@@ -17,10 +17,19 @@ add_library(task
     code/channel.c
     code/context.c
     code/fd.c
-    code/httpload.c
     code/net.c
-    code/primes.c
     code/print.c
     code/qlock.c
     code/rendez.c
     code/task.c)
+
+add_executable(httpload code/impl/httpload.c)
+add_executable(primes code/impl/primes.c)
+add_executable(tcpproxy code/impl/tcpproxy.c)
+add_executable(testdelay1 code/impl/testdelay1.c)
+add_executable(testdelay code/impl/testdelay.c)
+target_link_libraries(httpload task)
+target_link_libraries(primes task)
+target_link_libraries(tcpproxy task)
+target_link_libraries(testdelay1 task)
+target_link_libraries(testdelay task)
