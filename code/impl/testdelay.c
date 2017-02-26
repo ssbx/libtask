@@ -9,12 +9,15 @@ enum {
     STACK = 32768
 };
 
+#define MAX_ARGS 100
+int args_values[100];
+
 Channel *c;
 
 void
 delaytask(void *v) {
-    taskdelay((int) v);
-    printf("awake after %d ms\n", (int) v);
+    taskdelay(*(int*) v);
+    printf("awake after %d ms\n", *(int*) v);
     chansendul(c, 0);
 }
 
@@ -28,7 +31,10 @@ taskmain(int argc, char **argv) {
     for (i = 1; i < argc; i++) {
         n++;
         printf("x");
-        taskcreate(delaytask, (void*) atoi(argv[i]), STACK);
+        args_values[i] = atoi(argv[i]);
+        taskcreate(delaytask, (void*) &args_values[i], STACK);
+        if (i < MAX_ARGS)
+            break;
     }
 
     /* wait for n tasks to finish */
