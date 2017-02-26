@@ -1,22 +1,26 @@
 cmake_minimum_required (VERSION 2.6)
 project (libtask)
 
-include_directories(.)
+include_directories(code)
+
+configure_file(
+    ${CMAKE_CURRENT_SOURCE_DIR}/Makefile.in
+    ${CMAKE_CURRENT_SOURCE_DIR}/Makefile)
 
 add_library(task
-    386-ucontext.h
-    amd64-ucontext.h
-    mips-ucontext.h
-    power-ucontext.h
-    task.h
-    taskimpl.h
-    channel.c
-    context.c
-    fd.c
-    httpload.c
-    net.c
-    primes.c
-    print.c
-    qlock.c
-    rendez.c
-    task.c)
+    code/386-ucontext.h
+    code/amd64-ucontext.h
+    code/mips-ucontext.h
+    code/power-ucontext.h
+    code/task.h
+    code/taskimpl.h
+    code/channel.c
+    code/context.c
+    code/fd.c
+    code/httpload.c
+    code/net.c
+    code/primes.c
+    code/print.c
+    code/qlock.c
+    code/rendez.c
+    code/task.c)
